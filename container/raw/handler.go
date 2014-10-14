@@ -65,8 +65,10 @@ func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, mac
 			names := strings.SplitAfter(name, "/")
 			cName = names[len(names)-1]
 		}
+		glog.Infof("name %s cname %s networkInterface %s", name, cName, networkInterface)
 		if cName == container.Id {
 			networkInterface = container.NetworkInterface
+			glog.Infof("found networkInterface %s\n\n", networkInterface)
 			break
 		}
 	}

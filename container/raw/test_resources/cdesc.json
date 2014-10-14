@@ -14,10 +14,10 @@
       "memory": null,
       "net": null,
       "netinit": "false",
-      "network_interface": {
-        "VethChild": "eth1",
-        "VethHost": "veth24031eth1"
-      },
+       "network_interface": {
+          "VethChild": "eth1",
+          "VethHost": "vethe28c7eth1"
+        },
       "mounts": [
         {
           "host-dir": "/var/run/nm-sdc1",

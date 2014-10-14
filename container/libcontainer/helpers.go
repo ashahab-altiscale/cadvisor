@@ -16,7 +16,7 @@ package libcontainer
 
 import (
 	"time"
-
+	"github.com/golang/glog"
 	"github.com/docker/libcontainer"
 	"github.com/docker/libcontainer/cgroups"
 	cgroupfs "github.com/docker/libcontainer/cgroups/fs"
@@ -36,6 +36,7 @@ func GetStats(cgroup *cgroups.Cgroup, state *libcontainer.State) (*info.Containe
 	}
 
 	stats.NetworkStats, err = network.GetStats(&state.NetworkState)
+	glog.Infof("NetworkState %s NetworkStats %s", state.NetworkState, stats.NetworkStats)
 	return toContainerStats(stats), nil
 }
 
