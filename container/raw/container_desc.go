@@ -22,6 +22,7 @@ import (
 	"flag"
 	"encoding/json"
 	"io/ioutil"
+	"github.com/golang/glog"
 )
 var argContainerHints = flag.String("container_hints", "/etc/cadvisor/container_description.json", "container hints file")
 type containerHints struct {
@@ -41,9 +42,11 @@ type networkInterface struct {
 
 func Unmarshal(containerHintsFile string) (containerHints, error) {
 	dat, err := ioutil.ReadFile(containerHintsFile)
+	glog.Infof("Read file: %s", string(dat))
 	var cDesc containerHints
 	if err == nil {
 		err = json.Unmarshal(dat, &cDesc)
 	}
+	glog.Infof("Read json: %s", cDesc)
 	return cDesc, err
 }
