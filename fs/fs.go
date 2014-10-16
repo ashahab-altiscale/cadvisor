@@ -63,6 +63,7 @@ func (self *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, er
 			if err != nil {
 				glog.Errorf("Statvfs failed. Error: %v", err)
 			} else {
+
 				deviceSet[device] = struct{}{}
 				deviceInfo := DeviceInfo{
 					Device: device,
@@ -70,10 +71,12 @@ func (self *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, er
 					Minor:  uint(partition.minor),
 				}
 				fs := Fs{deviceInfo, total, free}
+				glog.Infof("Added file system %s", fs)
 				filesystems = append(filesystems, fs)
 			}
 		}
 	}
+	glog.Infof("filesystems %s", filesystems)
 	return filesystems, nil
 }
 
