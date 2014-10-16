@@ -190,7 +190,7 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 		for _, fs := range filesystems {
 			stats.Filesystem = append(stats.Filesystem, info.FsStats{fs.Device, fs.Capacity, fs.Capacity - fs.Free})
 		}
-	} else if self.mounts != nil {
+	} else if len(self.mounts) > 0 {
 		var mountSet map[string]struct{}
 		mountSet = make(map[string]struct{})
 		for _, mount := range self.mounts {
