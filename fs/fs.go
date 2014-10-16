@@ -53,11 +53,12 @@ func NewFsInfo() (FsInfo, error) {
 func (self *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, error) {
 	filesystems := make([]Fs, 0)
 	deviceSet := make(map[string]struct{})
+	glog.Infof("Mountset: %s", mountSet)
 	for device, partition := range self.partitions {
 		_, hasMount := mountSet[partition.mountpoint]
 		_, hasDevice := deviceSet[device]
 		glog.Infof("mount %s, hasMount %s, device %s, hasDecice %s", partition.mountpoint, hasMount, device, hasDevice)
-		if mountSet == nil ||  hasMount &&  hasDevice {
+		if mountSet == nil ||  hasMount &&  !hasDevice {
 			total, free, err := getVfsStats(partition.mountpoint)
 			if err != nil {
 				glog.Errorf("Statvfs failed. Error: %v", err)
