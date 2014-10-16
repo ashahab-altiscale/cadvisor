@@ -191,10 +191,10 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 			stats.Filesystem = append(stats.Filesystem, info.FsStats{fs.Device, fs.Capacity, fs.Capacity - fs.Free})
 		}
 	} else if self.mounts != nil {
-		var mountSet map[string]bool
-		mountSet = make(map[string]bool)
+		var mountSet map[string]struct{}
+		mountSet = make(map[string]struct{})
 		for _, mount := range self.mounts {
-			mountSet[mount.HostDir] = true
+			mountSet[mount.HostDir] = struct{}{}
 		}
 		filesystems, err := self.fsInfo.GetFsInfoForPath(mountSet)
 		if err != nil {
