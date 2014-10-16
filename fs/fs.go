@@ -58,7 +58,7 @@ func (self *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, er
 		_, hasMount := mountSet[partition.mountpoint]
 		_, hasDevice := deviceSet[device]
 		glog.Infof("mount %s, hasMount %s, device %s, hasDecice %s", partition.mountpoint, hasMount, device, hasDevice)
-		if mountSet == nil ||  hasMount &&  !hasDevice {
+		if mountSet == nil || len(mountSet) == 0 ||  hasMount &&  !hasDevice {
 			total, free, err := getVfsStats(partition.mountpoint)
 			if err != nil {
 				glog.Errorf("Statvfs failed. Error: %v", err)
