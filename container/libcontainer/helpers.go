@@ -16,12 +16,13 @@ package libcontainer
 
 import (
 	"time"
-
+	"strconv"
 	"github.com/docker/libcontainer"
 	"github.com/docker/libcontainer/cgroups"
 	cgroupfs "github.com/docker/libcontainer/cgroups/fs"
 	"github.com/docker/libcontainer/network"
 	"github.com/google/cadvisor/info"
+	"github.com/google/cadvisor/fs"
 )
 
 // Get stats of the specified container
@@ -55,6 +56,11 @@ func DiskStatsCopy(blkio_stats []cgroups.BlkioStatEntry) (stat []info.PerDiskSta
 		Major uint64
 		Minor uint64
 	}
+	fsInfo, err := fs.NewFsInfo()
+	if err != nil {
+		return nil
+	}
+	partitionMap := fsInfo.GetPartitionMap()
 	disk_stat := make(map[DiskKey]*info.PerDiskStats)
 	for i := range blkio_stats {
 		major := blkio_stats[i].Major
@@ -65,7 +71,9 @@ func DiskStatsCopy(blkio_stats []cgroups.BlkioStatEntry) (stat []info.PerDiskSta
 		}
 		diskp, ok := disk_stat[disk_key]
 		if !ok {
+			partitionKey := strconv.FormatUint(major, 10) + "_" + strconv.FormatUint(minor, 10)
 			disk := info.PerDiskStats{
+				Device: partitionMap[partitionKey],
 				Major: major,
 				Minor: minor,
 			}

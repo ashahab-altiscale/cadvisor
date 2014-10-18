@@ -50,6 +50,15 @@ func NewFsInfo() (FsInfo, error) {
 	return &RealFsInfo{partitions}, nil
 }
 
+func (self *RealFsInfo) GetPartitionMap()(map[string]string) {
+	partitionMap := make(map[string]string, 0)
+	for device, partition := range self.partitions {
+		partitionMap[strconv.FormatUint(uint64(partition.major), 10) +
+				"_" + strconv.FormatUint(uint64(partition.minor), 10)] = device
+	}
+	return partitionMap
+}
+
 func (self *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, error) {
 	filesystems := make([]Fs, 0)
 	deviceSet := make(map[string]struct{})
