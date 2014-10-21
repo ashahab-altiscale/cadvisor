@@ -23,8 +23,10 @@ import (
 	"strings"
 
 	"code.google.com/p/go.exp/inotify"
+	dockerlibcontainer "github.com/docker/libcontainer"
 	"github.com/docker/libcontainer/cgroups"
 	cgroup_fs "github.com/docker/libcontainer/cgroups/fs"
+	"github.com/docker/libcontainer/network"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/libcontainer"
@@ -42,12 +44,27 @@ type rawContainerHandler struct {
 	stopWatcher        chan error
 	watches            map[string]struct{}
 	fsInfo             fs.FsInfo
+	networkInterface   *networkInterface
+	externalMounts     []mount
 }
 
 func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, machineInfoFactory info.MachineInfoFactory) (container.ContainerHandler, error) {
 	fsInfo, err := fs.NewFsInfo()
 	if err != nil {
 		return nil, err
+	}
+	cHints, err := getContainerHintsFromFile(*argContainerHints)
+	if err != nil {
+		return nil, err
+	}
+	var networkInterface *networkInterface
+	var externalMounts []mount
+	for _, container := range cHints.AllHosts {
+		if name == container.FullName {
+			networkInterface = container.NetworkInterface
+			externalMounts = container.Mounts
+			break
+		}
 	}
 	return &rawContainerHandler{
 		name: name,
@@ -60,6 +77,8 @@ func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, mac
 		stopWatcher:        make(chan error),
 		watches:            make(map[string]struct{}),
 		fsInfo:             fsInfo,
+		networkInterface:   networkInterface,
+		externalMounts:     externalMounts,
 	}, nil
 }
 
@@ -149,23 +168,65 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	}
 
 	// Fs.
-	if self.name == "/" {
+	if self.name == "/" || self.externalMounts != nil {
 		spec.HasFilesystem = true
+	}
+
+	//Network
+	if self.networkInterface != nil {
+		spec.HasNetwork = true
 	}
 	return spec, nil
 }
 
+func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
+
+	// Get Filesystem information only for the root cgroup.
+	if self.name == "/" {
+		filesystems, err := self.fsInfo.GetGlobalFsInfo()
+		if err != nil {
+			return err
+		}
+		for _, fs := range filesystems {
+			stats.Filesystem = append(stats.Filesystem, info.FsStats{fs.Device, fs.Capacity, fs.Capacity - fs.Free})
+		}
+	} else if len(self.externalMounts) > 0 {
+		var mountSet map[string]struct{}
+		mountSet = make(map[string]struct{})
+		for _, mount := range self.externalMounts {
+			mountSet[mount.HostDir] = struct{}{}
+		}
+		filesystems, err := self.fsInfo.GetFsInfoForPath(mountSet)
+		if err != nil {
+			return err
+		}
+		for _, fs := range filesystems {
+			stats.Filesystem = append(stats.Filesystem, info.FsStats{fs.Device, fs.Capacity, fs.Capacity - fs.Free})
+		}
+	}
+	return nil
+}
+
 func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
-	stats, err := libcontainer.GetStatsCgroupOnly(self.cgroup)
+	state := dockerlibcontainer.State{}
+	if self.networkInterface != nil {
+		state = dockerlibcontainer.State{
+			NetworkState: network.NetworkState{
+				VethHost: self.networkInterface.VethHost,
+				VethChild: self.networkInterface.VethChild,
+				NsPath: "unknown",
+			},
+		}
+	}
+
+	stats, err := libcontainer.GetStats(self.cgroup, &state)
 	if err != nil {
 		return nil, err
 	}
-	// Get Filesystem information only for the root cgroup.
-	if self.name == "/" {
-		stats.Filesystem, err = self.fsInfo.GetFsStats()
-		if err != nil {
-			return nil, err
-		}
+
+	err = self.getFsStats(stats)
+	if err != nil {
+		return nil, err
 	}
 
 	return stats, nil

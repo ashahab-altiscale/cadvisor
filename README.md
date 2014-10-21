@@ -26,7 +26,7 @@ cAdvisor is now running (in the background) on `http://localhost:8080`. The setu
 
 **Note**: On CentOS and RHEL 6, run cAdvisor with an additional option ```--volume=/cgroup:/cgroup \```
 
-If you want to build your own cAdvisor Docker image, take a look at the Dockerfile which can build a cAdvisor docker container under `quickstart/Dockerfile`.
+If you want to build your own cAdvisor Docker image, take a look at `deploy/Dockerfile` and `deploy/build.sh`.
 
 #### Using [InfluxDB](http://influxdb.com) as backend storage
 
@@ -125,6 +125,16 @@ This resource is read-only. The machine information is returned as a JSON object
 - Memory capacity (in bytes)
 
 The actual object is the marshalled JSON of the `MachineInfo` struct found in [info/machine.go](info/machine.go)
+
+## REST API Clients
+
+There is an example Go client under [client/](client/) - you can use it on your own Go project by including it like this:
+
+```go
+import "github.com/google/cadvisor/client"
+client, err = client.NewClient("http://192.168.59.103:8080/")
+mInfo, err := client.MachineInfo()
+```
 
 ## Roadmap
 
